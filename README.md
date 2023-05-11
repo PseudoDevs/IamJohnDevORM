@@ -9,8 +9,8 @@
 - Lightweight and fast
 
 ### Requirements
-PHP 8.0 or higher
-MySQL 5.5 or higher
+- PHP 8.0 or higher
+- MySQL 5.5 or higher
 
 # Installation
 You can install **IJDORM** using **Composer**:
