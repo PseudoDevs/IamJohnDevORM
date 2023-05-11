@@ -18,5 +18,7 @@
         "php": "^8.0",
         "ext-mysqli": "*"
     },
-    "minimum-stability": "stable"
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "version": "1.0.0"
 }

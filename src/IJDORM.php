@@ -2,6 +2,9 @@
 
 namespace IamJohnDevORM;
 
+use mysqli;
+use Exception;
+
 class IJDORM {
     private $conn;
 
@@ -39,13 +42,7 @@ class IJDORM {
 
         $sql = "INSERT INTO $table ($keys) VALUES ($values)";
 
-        $result = $this->conn->query($sql);
-
-        if (!$result) {
-            throw new Exception("Error: " . $this->conn->error);
-        }
-
-        return $this->conn->insert_id;
+        return $this->executeQuery($sql);
     }
 
     public function update($table, $data, $where = "") {
@@ -61,13 +58,7 @@ class IJDORM {
             $sql .= " WHERE $where";
         }
 
-        $result = $this->conn->query($sql);
-
-        if (!$result) {
-            throw new Exception("Error: " . $this->conn->error);
-        }
-
-        return $this->conn->affected_rows;
+        return $this->executeQuery($sql);
     }
 
     public function delete($table, $where = "") {
@@ -76,13 +67,17 @@ class IJDORM {
             $sql .= " WHERE $where";
         }
 
+        return $this->executeQuery($sql);
+    }
+
+    private function executeQuery($sql) {
         $result = $this->conn->query($sql);
 
         if (!$result) {
             throw new Exception("Error: " . $this->conn->error);
         }
 
-        return $this->conn->affected_rows;
+        return $result;
     }
 
     public function __destruct() {
