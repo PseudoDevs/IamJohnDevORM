@@ -15,7 +15,7 @@
 # Installation
 You can install **IJDORM** using **Composer**:
 ```php
-composer require iamjohndev/ij-dorm
+composer require iamjohndev/ijd-orm
 ```
 ## Usage
 First, you need to create a new instance of the **IJDORM** class and pass your database credentials to the constructor:
