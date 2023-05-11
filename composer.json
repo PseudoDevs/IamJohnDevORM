@@ -1,0 +1,22 @@
+{
+    "name": "iamjohndev/ijd-orm",
+    "description": "A simple and lightweight ORM for MySQLi",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "John Lester Legaspi",
+            "email": "contact@iamjohndev.fun"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "IamJohnDevORM\\": "src/"
+        }
+    },
+    "require": {
+        "php": "^8.0",
+        "ext-mysqli": "*"
+    },
+    "minimum-stability": "stable"
+}
