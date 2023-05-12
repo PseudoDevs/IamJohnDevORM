@@ -1,6 +1,6 @@
 {
     "name": "iamjohndev/ijd-orm",
-    "description": "A simple and lightweight ORM for MySQLi",
+    "description": "A simple and lightweight PHP ORM for MySQLi",
     "type": "library",
     "license": "MIT",
     "authors": [
