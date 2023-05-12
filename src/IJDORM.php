@@ -8,6 +8,7 @@ use mysqli;
 class IJDORM
 {
     private $conn;
+    private $whereClause;
 
     public function __construct($host, $username, $password, $database)
     {
@@ -18,12 +19,18 @@ class IJDORM
         }
     }
 
-    public function select($table, $fields = "*", $where = "")
+    public function select($table, $fields = "*")
     {
         $fields = $this->sanitizeFields($fields);
-        $where = $this->sanitizeWhere($where);
 
-        $stmt = $this->conn->prepare("SELECT $fields FROM $table WHERE $where");
+        $sql = "SELECT $fields FROM $table";
+
+        // Append the WHERE clause if it exists
+        if (!empty($this->whereClause)) {
+            $sql .= " WHERE " . $this->whereClause;
+        }
+
+        $stmt = $this->conn->prepare($sql);
         if ($stmt === false) {
             throw new Exception("Error preparing SQL statement: " . $this->conn->error);
         }
@@ -40,7 +47,18 @@ class IJDORM
             $rows[] = $this->sanitizeData($row);
         }
 
+        // Reset the WHERE clause after the query is executed
+        $this->whereClause = '';
+
         return $rows;
+    }
+
+    public function where($where)
+    {
+        $where = $this->sanitizeWhere($where);
+        $this->whereClause = $where;
+
+        return $this;
     }
 
     public function insert($table, $data)
