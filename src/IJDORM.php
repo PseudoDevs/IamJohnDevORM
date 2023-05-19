@@ -75,23 +75,25 @@ class IJDORM
     }
 
     public function update($table, $data, $where = "", $params = [])
-    {
-        $data = $this->sanitizeData($data);
-        $where = $this->sanitizeWhere($where);
+{
+    $data = $this->sanitizeData($data);
+    $where = $this->sanitizeWhere($where);
 
-        $set = [];
-        foreach ($data as $key => $value) {
-            $set[] = "$key = ?";
-            $params[] = $value;
-        }
-
-        $sql = "UPDATE $table SET " . implode(",", $set);
-        if ($where) {
-            $sql .= " WHERE $where";
-        }
-
-        return $this->executePreparedStatement($sql, $params);
+    if (!$where) {
+        throw new Exception("Invalid or missing WHERE clause for the update operation.");
     }
+
+    $set = [];
+    foreach ($data as $key => $value) {
+        $set[] = "$key = ?";
+        $params[] = $value;
+    }
+
+    $sql = "UPDATE $table SET " . implode(", ", $set) . " WHERE $where";
+
+    return $this->executePreparedStatement($sql, $params);
+}
+
 
     public function delete($table, $where = "", $params = [])
     {
