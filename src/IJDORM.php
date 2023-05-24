@@ -1,192 +1,134 @@
-<?php
+<?php 
 
 namespace IamJohnDevORM;
 
-use Exception;
 use mysqli;
 
 class IJDORM
 {
-    private $conn;
-    private $whereClause;
+    protected $tableName;
+    protected $dbConnection;
+    protected $query;
 
-    public function __construct($host, $username, $password, $database)
+    public function __construct($tableName, $dbConnection)
     {
-        $this->conn = new mysqli($host, $username, $password, $database);
-
-        if ($this->conn->connect_error) {
-            throw new Exception("Connection failed: " . $this->conn->connect_error);
-        }
+        $this->tableName = $tableName;
+        $this->dbConnection = $dbConnection;
     }
 
-    public function select($table, $fields = "*")
+    public function customQuery($query)
     {
-        $fields = $this->sanitizeFields($fields);
+        // Execute a custom query
+        $result = $this->dbConnection->query($query);
+        $results = $result->fetch_all(MYSQLI_ASSOC);
 
-        $sql = "SELECT $fields FROM $table";
-
-        // Append the WHERE clause if it exists
-        if (!empty($this->whereClause)) {
-            $sql .= " WHERE " . $this->whereClause;
-        }
-
-        $stmt = $this->conn->prepare($sql);
-        if ($stmt === false) {
-            throw new Exception("Error preparing SQL statement: " . $this->conn->error);
-        }
-
-        $stmt->execute();
-        $result = $stmt->get_result();
-
-        if ($result === false) {
-            throw new Exception("Error executing SQL query: " . $this->conn->error);
-        }
-
-        $rows = [];
-        while ($row = $result->fetch_assoc()) {
-            $rows[] = $this->sanitizeData($row);
-        }
-
-        // Reset the WHERE clause after the query is executed
-        $this->whereClause = '';
-
-        return $rows;
+        return $results;
     }
 
-    public function where($where)
+    public function getAll()
     {
-        $where = $this->sanitizeWhere($where);
-        $this->whereClause = $where;
+        $query = "SELECT * FROM " . $this->tableName;
+        $result = $this->dbConnection->query($query);
+        $results = $result->fetch_all(MYSQLI_ASSOC);
+
+        return $results;
+    }
+
+    public function getFirst()
+    {
+        $query = "SELECT * FROM " . $this->tableName . " LIMIT 1";
+        $result = $this->dbConnection->query($query);
+        $result = $result->fetch_assoc();
+
+        return $result;
+    }
+
+    public function getLast()
+    {
+        $query = "SELECT * FROM " . $this->tableName . " ORDER BY id DESC LIMIT 1";
+        $result = $this->dbConnection->query($query);
+        $result = $result->fetch_assoc();
+
+        return $result;
+    }
+
+    public function select($columns = '*')
+    {
+        $this->query = "SELECT " . $this->sanitizeColumnNames($columns) . " FROM " . $this->tableName;
 
         return $this;
     }
 
-    public function insert($table, $data)
+    public function where($conditions)
     {
-        $data = $this->sanitizeData($data);
+        $this->query .= " WHERE " . $this->sanitizeConditions($conditions);
 
-        $keys = implode(",", array_keys($data));
-        $values = implode(",", array_fill(0, count($data), "?"));
-
-        $sql = "INSERT INTO $table ($keys) VALUES ($values)";
-        $params = array_values($data);
-
-        return $this->executePreparedStatement($sql, $params);
+        return $this;
     }
 
-    public function update($table, $data, $where = "", $params = [])
-{
-    $data = $this->sanitizeData($data);
-    $where = $this->sanitizeWhere($where);
-
-    if (!$where) {
-        throw new Exception("Invalid or missing WHERE clause for the update operation.");
-    }
-
-    $set = [];
-    foreach ($data as $key => $value) {
-        $set[] = "$key = ?";
-        $params[] = $value;
-    }
-
-    $sql = "UPDATE $table SET " . implode(", ", $set) . " WHERE $where";
-
-    return $this->executePreparedStatement($sql, $params);
-}
-
-
-    public function delete($table, $where = "", $params = [])
+    public function insert($data)
     {
-        $where = $this->sanitizeWhere($where);
+        $columns = implode(", ", array_keys($data));
+        $values = "'" . implode("', '", array_values($data)) . "'";
 
-        $sql = "DELETE FROM $table";
-        if ($where) {
-            $sql .= " WHERE $where";
-        }
+        $query = "INSERT INTO " . $this->tableName . " (" . $this->sanitizeColumnNames($columns) . ") VALUES (" . $values . ")";
+        $result = $this->dbConnection->query($query);
 
-        return $this->executePreparedStatement($sql, $params);
+        return $this->dbConnection->insert_id;
     }
 
-    public function join($tables, $fields = "*", $join_conditions = [], $where = "")
+    public function update($data)
     {
-        $fields = $this->sanitizeFields($fields);
-        $where = $this->sanitizeWhere($where);
+        $setClause = "";
 
-        $table_names = implode(",", $tables);
-
-        $join = "";
-        foreach ($join_conditions as $join_condition) {
-            $join .= " JOIN {$join_condition['table']} ON {$join_condition['on']}";
-        }
-
-        $stmt = $this->conn->prepare("SELECT $fields FROM $table_names $join WHERE $where");
-        if ($stmt === false) {
-            throw new Exception("Error preparing SQL statement: " . $this->conn->error);
-        }
-
-        $stmt->execute();
-        $result = $stmt->get_result();
-
-        if ($result === false) {
-            throw new Exception("Error executing SQL query: " . $this->conn->error);
-        }
-
-        $rows = [];
-        while ($row = $result->fetch_assoc()) {
-            $rows[] = $this->sanitizeData($row);
-        }
-
-        return $rows;
-    }
-
-    private function executePreparedStatement($sql, $params)
-    {
-        $stmt = $this->conn->prepare($sql);
-        if (!$stmt) {
-            throw new Exception("Error preparing statement: " . $this->conn->error);
-        }
-
-        if ($params) {
-            $types = str_repeat('s', count($params));
-            $stmt->bind_param($types, ...$params);
-        }
-
-        if (!$stmt->execute()) {
-            throw new Exception("Error executing statement: " . $stmt->error);
-        }
-
-        $affected_rows = $stmt->affected_rows;
-        $stmt->close();
-
-        return $affected_rows;
-    }
-
-    private function sanitizeFields($fields)
-    {
-        $fields = preg_replace("/[^a-zA-Z0-9 ->_,:*]/", "", $fields);
-        return $fields;
-    }
-
-    private function sanitizeWhere($where)
-    {
-        if (!$where) {
-            return "";
-        }
-        $where = preg_replace("/[^a-zA-Z0-9 ->_:=\s]/", "", $where);
-        return $where;
-    }
-
-    private function sanitizeData($data)
-    {
         foreach ($data as $key => $value) {
-            $data[$key] = $this->conn->real_escape_string($value);
+            $setClause .= $this->sanitizeColumnName($key) . " = '" . $value . "', ";
         }
 
-        return $data;
+        $setClause = rtrim($setClause, ", ");
+
+        $query = "UPDATE " . $this->tableName . " SET " . $setClause . $this->query;
+        $result = $this->dbConnection->query($query);
+
+        return $this->dbConnection->affected_rows;
     }
 
-    public function __destruct()
+    public function delete()
     {
-        $this->conn->close();
+        $query = "DELETE FROM " . $this->tableName . $this->query;
+        $result = $this->dbConnection->query($query);
+
+        return $this->dbConnection->affected_rows;
+    }
+
+    public function join($table, $condition, $type = 'INNER')
+    {
+        $this->query .= " $type JOIN " . $this->sanitizeTableName($table) . " ON " . $this->sanitizeConditions($condition);
+
+        return $this;
+    }
+
+    private function sanitizeTableName($tableName)
+    {
+        $sanitizedTableName = preg_replace('/[^a-zA-Z0-9_]/', '', $tableName);
+        return $sanitizedTableName;
+    }
+
+    private function sanitizeColumnNames($columns)
+    {
+        $sanitizedColumns = preg_replace('/[^a-zA-Z0-9_,\s*]/', '', $columns);
+        return $sanitizedColumns;
+    }
+
+    private function sanitizeColumnName($column)
+    {
+        $sanitizedColumn = preg_replace('/[^a-zA-Z0-9_]/', '', $column);
+        return $sanitizedColumn;
+    }
+
+    private function sanitizeConditions($conditions)
+    {
+        $sanitizedConditions = preg_replace('/[^a-zA-Z0-9_\s*><=!=]/', '', $conditions);
+        return $sanitizedConditions;
     }
 }
