@@ -75,23 +75,25 @@ class IJDORM
     }
 
     public function update($table, $data, $where = "", $params = [])
-    {
-        $data = $this->sanitizeData($data);
-        $where = $this->sanitizeWhere($where);
+{
+    $data = $this->sanitizeData($data);
+    $where = $this->sanitizeWhere($where);
 
-        $set = [];
-        foreach ($data as $key => $value) {
-            $set[] = "$key = ?";
-            $params[] = $value;
-        }
-
-        $sql = "UPDATE $table SET " . implode(",", $set);
-        if ($where) {
-            $sql .= " WHERE $where";
-        }
-
-        return $this->executePreparedStatement($sql, $params);
+    if (!$where) {
+        throw new Exception("Invalid or missing WHERE clause for the update operation.");
     }
+
+    $set = [];
+    foreach ($data as $key => $value) {
+        $set[] = "$key = ?";
+        $params[] = $value;
+    }
+
+    $sql = "UPDATE $table SET " . implode(", ", $set) . " WHERE $where";
+
+    return $this->executePreparedStatement($sql, $params);
+}
+
 
     public function delete($table, $where = "", $params = [])
     {
@@ -161,7 +163,7 @@ class IJDORM
 
     private function sanitizeFields($fields)
     {
-        $fields = preg_replace("/[^a-zA-Z0-9_,*]/", "", $fields);
+        $fields = preg_replace("/[^a-zA-Z0-9 ->_,:*]/", "", $fields);
         return $fields;
     }
 
@@ -170,7 +172,7 @@ class IJDORM
         if (!$where) {
             return "";
         }
-        $where = preg_replace("/[^a-zA-Z0-9_=\s]/", "", $where);
+        $where = preg_replace("/[^a-zA-Z0-9 ->_:=\s]/", "", $where);
         return $where;
     }
 
