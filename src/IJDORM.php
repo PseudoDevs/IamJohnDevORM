@@ -163,7 +163,7 @@ class IJDORM
 
     private function sanitizeFields($fields)
     {
-        $fields = preg_replace("/[^a-zA-Z0-9_,*]/", "", $fields);
+        $fields = preg_replace("/[^a-zA-Z0-9 ->_,:*]/", "", $fields);
         return $fields;
     }
 
@@ -172,7 +172,7 @@ class IJDORM
         if (!$where) {
             return "";
         }
-        $where = preg_replace("/[^a-zA-Z0-9_=\s]/", "", $where);
+        $where = preg_replace("/[^a-zA-Z0-9 ->_:=\s]/", "", $where);
         return $where;
     }
 
