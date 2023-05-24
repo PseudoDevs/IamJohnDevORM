@@ -1,94 +1,126 @@
 # IJDORM
 **IJDORM** is a lightweight and easy-to-use ORM (Object-Relational Mapping) library for PHP that provides a convenient way to interact with your MySQL database. With **IJDORM**, you can perform common **CRUD** (Create, Read, Update, Delete) operations on your database without having to write complex SQL queries.
 
+
 ### Features
-- Simple and intuitive API
-- Supports SELECT, INSERT, UPDATE, and DELETE operations
-- Supports basic WHERE clauses for filtering data
-- Easy to integrate with your PHP project
-- Lightweight and fast
+- Execute custom queries
+- Retrieve all rows from a table
+- Retrieve the first row from a table
+- Retrieve the last row from a table
+- Select specific columns from a table
+- Filter rows based on conditions
+- Insert new rows into a table
+- Update existing rows in a table
+- Delete rows from a table
+- Join tables based on specified conditions
 
-### Requirements
-- PHP 8.0 or higher
-- MySQL 5.5 or higher
+## Requirements
+- PHP 5.6 or higher
+- MySQL database
 
-# Installation
-You can install **IJDORM** using **Composer**:
-```php
-composer require iamjohndev/ijd-orm
-```
+
+## Installation
+IJDORM can be installed via Composer, the dependency management tool for PHP. Run the following command in your project directory to add IJDORM as a dependency:
+
+`composer require iamjohndev/ijdorm`
+
+After the installation, you can include the Composer autoloader in your PHP scripts to autoload the IJDORM classes:
+
+`require_once 'vendor/autoload.php';`
+
 ## Usage
-First, you need to create a new instance of the **IJDORM** class and pass your database credentials to the constructor:
+### Creating an Instance
+To start using IJDORM, create an instance of the IJDORM class by providing the table name and a database connection object (an instance of mysqli):
 
 ```php
-require_once 'vendor/autoload.php';
 use IamJohnDevORM\IJDORM;
 
-$db = new IJDORM('localhost', 'root', '', 'my_database');
-```
-**SELECT Query**
-To retrieve data from a table, you can use the select method:
-```php
-// retrieve all columns from the users table
-$users = $db->select('users');
-
-// retrieve only the name and email columns from the users table
-$users = $db->select('users', 'name,email');
-
-```
-You can also use the **where** method to filter the results based on a condition.
-```php
-// retrieve all users with an ID of 1
-$users = $db->where('id = 1')->select('users');
+$tableName = 'your_table_name';
+$dbConnection = new mysqli('localhost', 'username', 'password', 'database_name');
+$dorm = new IJDORM($tableName, $dbConnection);
 ```
 
-### INSERT
-You can use the **`insert`** method to insert data into a table in your database.
+### Executing Custom Queries
+You can execute custom SQL queries using the customQuery method. It returns an array of results.
+
 ```php
-// insert a new user into the users table
-$userData = [
-    'name' => 'John Doe',
-    'email' => 'johndoe@example.com',
-    'password' => password_hash('password', PASSWORD_DEFAULT),
+$query = 'SELECT * FROM your_table_name WHERE column = value';
+$results = $dorm->customQuery($query);
+
+```
+
+### Retrieving All Rows
+To retrieve all rows from a table, use the getAll method. It returns an array of results.
+```php
+$results = $dorm->getAll();
+```
+
+### Retrieving the First Row
+To retrieve the first row from a table, use the getFirst method. It returns an associative array representing the row.
+```php
+$result = $dorm->getFirst();
+```
+
+### Retrieving the Last Row
+To retrieve the last row from a table, use the getLast method. It returns an associative array representing the row.
+```php
+$result = $dorm->getLast();
+```
+
+### Selecting Specific Columns
+To select specific columns from a table, use the select method. You can pass a string of column names separated by commas or use '*' to select all columns. This method returns the IJDORM object, allowing you to chain additional methods.
+```php
+$dorm->select('column1, column2');
+// or
+$dorm->select('*');
+
+```
+
+### Filtering Rows with Conditions
+You can filter rows based on conditions using the where method. Pass a string representing the conditions in SQL syntax. This method also returns the IJDORM object for method chaining.
+
+```php
+$dorm->where('column1 = value AND column2 > value');
+```
+
+### Inserting Rows
+To insert new rows into a table, use the insert method. Pass an associative array where the keys represent column names and the values represent the corresponding values. It returns the ID of the inserted row.
+```php
+$data = [
+    'column1' => 'value1',
+    'column2' => 'value2',
 ];
-$db->insert('users', $userData);
+$insertedId = $dorm->insert($data);
+
 ```
 
-### UPDATE
-You can use the **`update `** method to insert data into a table in your database.
+### Updating Rows
+To update existing rows in a table, use the update method. Pass an associative array where the keys represent column names and the values represent the new values. It returns the number of affected rows.
 ```php
-// update the name and email of the user with an ID of 1
-$userData = [
-    'name' => 'Jane Doe',
-    'email' => 'janedoe@example.com',
+$data = [
+    'column1' => 'new_value1',
+    'column2' => 'new_value2',
 ];
-$db->where('id = 1')->update('users', $userData);
+$affectedRows = $dorm->update($data);
 
 ```
 
-### DELETE
-You can use the **`delete`** method to delete data from a table in your database.
-
+### Deleting Rows
+To delete rows from a table, use the delete method. It returns the number of affected rows.
 ```php
-// delete the user with an ID of 1
-$db->where('id = 1')->delete('users');
-
+$affectedRows = $dorm->delete();
 ```
 
-### JOIN
-You can use the **`join`** method to join two or more tables in your database.
-
+### Joining Tables
+To perform a join operation between tables, use the join method. Pass the name of the table to join, the join condition, and an optional join type ('INNER' by default). This method also returns the IJDORM object.
 ```php
-// join the users and orders tables on the user_id column
-$join_conditions = [
-    [
-        'table' => 'orders',
-        'on' => 'users.id = orders.user_id',
-    ],
-];
-$users = $db->join(['users'], 'users.name,orders.order_id', $join_conditions);
-
+$dorm->join('other_table', 'your_table.column = other_table.column');
+// or
+$dorm->join('other_table', 'your_table.column = other_table.column', 'LEFT');
 ```
 
-## License
-**IJDORM** is open-source software licensed under the **MIT license.**
+### Contributions
+Contributions to IJDORM are welcome! If you find any issues or have suggestions for improvements, please create an issue or submit a pull request on the [GitHub repository.](https://github.com/IamJohnDev/IJDORM "GitHub repository.")
+
+### License
+**IJDORM** is open-source software licensed under the MIT License. See the [LICENSE](https://github.com/PseudoDevs/IamJohnDevORM/blob/main/LICENSE.txt "LICENSE") file for more information.
