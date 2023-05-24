@@ -22,7 +22,7 @@
 ## Installation
 IJDORM can be installed via Composer, the dependency management tool for PHP. Run the following command in your project directory to add IJDORM as a dependency:
 
-`composer require iamjohndev/ijdorm`
+`composer require iamjohndev/ijd-orm`
 
 After the installation, you can include the Composer autoloader in your PHP scripts to autoload the IJDORM classes:
 
