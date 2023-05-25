@@ -36,7 +36,12 @@ class IJDORM
 
     public function getFirst()
     {
-        $query = "SELECT * FROM " . $this->tableName . " LIMIT 1";
+        $query = "SELECT * FROM " . $this->tableName;
+        // Append the WHERE clause if it exists
+        if (!empty($this->whereClause)) {
+            $query .= $this->whereClause;
+        }
+        $query .= " LIMIT 1";
         $result = $this->dbConnection->query($query);
         $result = $result->fetch_assoc();
 
@@ -61,7 +66,8 @@ class IJDORM
 
     public function where($conditions)
     {
-        $this->query .= " WHERE " . $this->sanitizeConditions($conditions);
+        $where = $this->query .= " WHERE " . $this->sanitizeConditions($conditions);
+        $this->whereClause = $where;
 
         return $this;
     }
@@ -128,7 +134,7 @@ class IJDORM
 
     private function sanitizeConditions($conditions)
     {
-        $sanitizedConditions = preg_replace('/[^a-zA-Z0-9_\s*><=!=]/', '', $conditions);
+        $sanitizedConditions = preg_replace('/[^a-zA-Z0-9\'_\s*><=!=]/', '', $conditions);
         return $sanitizedConditions;
     }
 }
