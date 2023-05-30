@@ -22,7 +22,7 @@
 ## Installation
 IJDORM can be installed via Composer, the dependency management tool for PHP. Run the following command in your project directory to add IJDORM as a dependency:
 
-`composer require iamjohndev/ijdorm`
+`composer require iamjohndev/ijd-orm`
 
 After the installation, you can include the Composer autoloader in your PHP scripts to autoload the IJDORM classes:
 
@@ -101,14 +101,14 @@ $data = [
     'column1' => 'new_value1',
     'column2' => 'new_value2',
 ];
-$affectedRows = $dorm->update($data);
+$updatedRows = $orm->where('column3 = "value"')->update($data);
 
 ```
 
 ### Deleting Rows
 To delete rows from a table, use the delete method. It returns the number of affected rows.
 ```php
-$affectedRows = $dorm->delete();
+$affectedRows = $orm->where('column = "value"')->delete();
 ```
 
 ### Joining Tables
