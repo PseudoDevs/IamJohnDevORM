@@ -1,6 +1,7 @@
 <?php
 
 // use mysqli driver
+namespace iamjohndev;
 
 class IJDORM
 {
