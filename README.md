@@ -33,7 +33,7 @@ After the installation, you can include the Composer autoloader in your PHP scri
 To start using IJDORM, create an instance of the IJDORM class by providing the table name and a database connection object (an instance of mysqli):
 
 ```php
-use IJDORM\IJDORM;
+use iamjohndev\IJDORM;
 
 // Create a database connection
 $connection = new mysqli('localhost', 'username', 'password', 'database');
