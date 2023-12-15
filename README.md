@@ -15,7 +15,7 @@
 - Join tables based on specified conditions
 
 ## Requirements
-- PHP 5.6 or higher
+- PHP 8.0 or higher
 - MySQL database
 
 
