@@ -61,6 +61,7 @@ class IJDORM
         $query = "SELECT * FROM $this->table";
         $values = [];
         $types = '';
+        $results = [];
 
         if ($this->whereConditions) {
             $whereClause = implode(" AND ", array_column($this->whereConditions, 'condition'));
@@ -98,11 +99,17 @@ class IJDORM
         }
 
         $statement->execute();
-        $result = $statement->get_result()->fetch_all(MYSQLI_ASSOC);
-        
+        $result = $statement->get_result();
+
+        while ($row = $result->fetch_object()) {
+            $results[] = $row;
+        }
+
         $statement->close(); // Close the statement
-        return $result;
+        return $results;
     }
+
+
 
     public function first()
     {
@@ -202,6 +209,11 @@ class IJDORM
 }
 
 
+    /*
+     * This method is used to delete a record from the table
+     * Usage: $orm->delete(1);
+     * This will delete the record with id = 1
+     */
     public function delete($id)
     {
         $query = "DELETE FROM {$this->table} WHERE id = ?";
@@ -221,6 +233,12 @@ class IJDORM
         }
     }
 
+    /*
+     * This method is used to add a where condition to the query
+     * Usage: $orm->where('id', '=', 1)->get();
+     * This will return all records where id = 1
+     */
+
     public function where($column, $operator, $value)
     {
         $this->whereConditions[] = [
@@ -231,6 +249,175 @@ class IJDORM
         return $this;
     }
 
+    /*
+     *  This method is used to select specific columns from the table
+     *  Usage: $orm->select('id', 'name')->get();
+     */
+    public function select($columns)
+    {
+        // Comma separated list of columns
+        $columns = implode(', ', func_get_args());
+
+        $query = "SELECT $columns FROM $this->table";
+        $values = [];
+
+        if (!empty($this->whereConditions)) {
+            $whereClause = implode(" AND ", array_column($this->whereConditions, 'condition'));
+            $query .= " WHERE $whereClause";
+            $values = array_column($this->whereConditions, 'value');
+        }
+
+        if (!empty($this->groupByColumn)) {
+            $query .= " GROUP BY $this->groupByColumn";
+        }
+
+        if (!empty($this->orderByColumn)) {
+            $query .= " ORDER BY $this->orderByColumn";
+        }
+
+        if (!empty($this->limitValue)) {
+            $query .= " LIMIT $this->limitValue";
+        }
+
+        $statement = $this->connection->prepare($query);
+
+        if ($values) {
+            $statement->bind_param(str_repeat('s', count($values)), ...$values);
+        }
+
+        $statement->execute();
+
+        // return as array of objects
+        return $statement->get_result()->fetch_all(MYSQLI_ASSOC);
+
+//         return as array of objects
+         $results = [];
+         $result = $statement->get_result();
+
+         while ($row = $result->fetch_object()) {
+             $results[] = $row;
+         }
+    }
+
+    public function toDataTables($data) {
+
+        // Remove the indexes from the data array
+        $data = array_values($data);
+
+        // Loop through the data array
+        foreach ($data as $key => $value) {
+            // Add the DT_RowId property to the data array
+            $data[$key]['DT_RowId'] = $value['id'];
+        }
+
+        // Make this result set compatible with DataTables
+        $result = [
+            'draw' => 1,
+            'recordsTotal' => count($data),
+            'recordsFiltered' => count($data),
+            'data' => $data,
+        ];
+
+        return $result;
+
+
+    }
+
+    public function count()
+    {
+        $query = "SELECT COUNT(*) FROM $this->table";
+        $values = [];
+
+        if (!empty($this->whereConditions)) {
+            $whereClause = implode(" AND ", $this->whereConditions);
+            $query .= " WHERE $whereClause";
+            $values = array_column($this->whereConditions, 'value');
+        }
+
+        if (!empty($this->groupByColumn)) {
+            $query .= " GROUP BY $this->groupByColumn";
+        }
+
+        if (!empty($this->orderByColumn)) {
+            $query .= " ORDER BY $this->orderByColumn";
+        }
+
+        if (!empty($this->limitValue)) {
+            $query .= " LIMIT $this->limitValue";
+        }
+
+        $statement = $this->connection->prepare($query);
+        $statement->execute($values);
+
+        return $statement->get_result()->fetch_row()[0];
+    }
+
+    /*
+     * This method is used to offset the results returned from the query
+     * Usage: $orm->offset(10)->get();
+     * This will return results starting from the 10th record
+     */
+    public function offset($offset)
+    {
+        $this->offsetValue = $offset;
+        return $this;
+    }
+
+
+    /*
+     * This method is used to dump and die the data
+     * Usage: $orm->dd($data);
+     * This will dump and die the data
+     */
+    public function dd($data)
+    {
+        // Add syntax highlighting to the var_dump
+        $highlighted = $this->syntaxHighlighting($data);
+
+        // Output the data with background color
+        echo "<pre style='background-color: #11052C; color: #F43B86; padding: 20px; margin: 20px; border-radius: 5px;'>";
+        echo $highlighted;
+        echo "</pre>";
+
+    }
+
+    /*
+     * Syntax highlighting for var_dump
+     * Usage: $this->syntaxHighlighting($data);
+     */
+    private function syntaxHighlighting($data)
+    {
+        // Start the output buffer
+        ob_start();
+
+        // Output the data
+        print_r($data);
+
+        // Get the output buffer contents
+        $contents = ob_get_contents();
+
+        // Clean the output buffer
+        ob_end_clean();
+
+        // Replace double quotes with single quotes
+        $contents = str_replace('"', "'", $contents);
+
+        // Add syntax highlighting to the var_dump
+        $contents = preg_replace('/(string\(|int\(|float\(|bool\(|array\(|object\(|NULL\(|\)\n)/', '<span style="color: blue">$1</span>', $contents);
+
+        // Add syntax highlighting to the array keys
+        $contents = preg_replace('/(\[)(.*?)(\] =>)/', '$1<span style="color: #FFE459">$2</span>$3', $contents);
+
+        // Add syntax highlighting to the array values
+        $contents = preg_replace('/(\=\>)(.*?)(\n)/', '$1<span style="color: #9575DE">$2</span>$3', $contents);
+
+        return $contents;
+    }
+    /*
+     * This method is used to limit the number of results returned from the query
+     * Usage: $orm->limit(10)->get();
+     * This will return only 10 results
+     */
     public function limit($limit)
     {
         $this->limitValue = $limit;
@@ -261,6 +448,15 @@ class IJDORM
         }
 
         return null;
+    }
+
+
+
+    public function toJson($data)
+    {
+        header('Content-Type: application/json');
+        echo json_encode($data);
+        exit;
     }
 
     public function validate(array $data, array $rules)
@@ -469,6 +665,11 @@ class IJDORM
         return in_array($fileExtension, $allowedExtensions);
     }
 
+    /*
+        * This method is used to get the error message for a validation rule
+        * Usage: $this->getErrorMessage('email', 'required', []);
+        * This will return "The email field is required"
+    */
     private function getErrorMessage($field, $ruleName, $ruleParams)
     {
         $errorMessages = [
