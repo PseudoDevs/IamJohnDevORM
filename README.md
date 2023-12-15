@@ -118,6 +118,13 @@ $data = [
     'email' => 'jane@example.com',
 ];
 
+<!-- or -->
+$id = 1;
+$data = array(
+    'name' => 'Jane Doe',
+    'email' => 'jane@example.com',
+);
+
 $result = $dorm->update($id, $data);
 
 if ($result['success']) {
